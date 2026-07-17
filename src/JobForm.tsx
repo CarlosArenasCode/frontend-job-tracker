@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 
 export function JobForm({ onJobAdded }: { onJobAdded: () => void }) {
   const [company, setCompany] = useState('');
@@ -6,8 +6,8 @@ export function JobForm({ onJobAdded }: { onJobAdded: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); 
     setLoading(true);
     setError(null);
 
@@ -23,16 +23,15 @@ export function JobForm({ onJobAdded }: { onJobAdded: () => void }) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save job application');
+        throw new Error('Error saving the job application');
       }
 
       setCompany('');
       setPosition('');
-      
       onJobAdded();
 
     } catch (err: any) {
-      setError(err.message);
+      setError(err?.message ?? String(err));
     } finally {
       setLoading(false);
     }
@@ -40,13 +39,13 @@ export function JobForm({ onJobAdded }: { onJobAdded: () => void }) {
 
   return (
     <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-      <h3 style={{ marginTop: 0 }}>Add New Application</h3>
+      <h3 style={{ marginTop: 0 }}>Add Job Application</h3>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       
       <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
         <input 
           type="text" 
-          placeholder="Company (Ej. Google)" 
+          placeholder="Company (e.g., Spotify)" 
           value={company}
           onChange={(e) => setCompany(e.target.value)}
           required
@@ -54,7 +53,7 @@ export function JobForm({ onJobAdded }: { onJobAdded: () => void }) {
         />
         <input 
           type="text" 
-          placeholder="Position (Ej. Backend Dev)" 
+          placeholder="Position (e.g., Backend Developer)" 
           value={position}
           onChange={(e) => setPosition(e.target.value)}
           required
@@ -65,7 +64,7 @@ export function JobForm({ onJobAdded }: { onJobAdded: () => void }) {
           disabled={loading} 
           style={{ padding: '10px 20px', cursor: 'pointer', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
         >
-          {loading ? 'Guardando...' : 'Guardar'}
+          {loading ? 'Saving...' : 'Save'}
         </button>
       </form>
     </div>
