@@ -7,7 +7,7 @@ interface Job {
   status: string;
 }
 
-export function JobList() {
+export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export function JobList() {
         }
       } catch (err: any) {
         if (err.name === 'AbortError') return;
-        setError(err.message ?? String(err));
+        setError(err?.message ?? String(err));
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -41,35 +41,34 @@ export function JobList() {
 
     fetchJobs();
     return () => controller.abort();
-  }, []); 
+  }, [refreshTrigger]);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this application?')) return;
+    if (!window.confirm('Are you sure you want to delete this job application?')) return;
 
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
-      
       const response = await fetch(`${apiBaseUrl}/api/jobs/${id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete the job application');
+        throw new Error('Error deleting the job application');
       }
 
       setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
-
     } catch (err: any) {
-      alert(`Error: ${err.message}`); 
+      // Mejora 4: Fallback seguro para el error del alert
+      alert(`Error: ${err?.message ?? String(err)}`); 
     }
   };
 
-  if (loading) return <p>Cargando trabajos...</p>;
+  if (loading) return <p>Loading jobs...</p>;
   if (error) return <p>Error: {error}</p>;
 
   return (
     <div>
-      <h2>My Job Applications</h2>
+      <h2>Mis Postulaciones</h2>
       {jobs.length === 0 ? (
         <p>You haven't saved any job applications yet.</p>
       ) : (
@@ -81,28 +80,19 @@ export function JobList() {
               padding: '15px', 
               borderRadius: '8px',
               display: 'flex',
-              justifyContent: 'space-between', // Separa el texto del botón
+              justifyContent: 'space-between',
               alignItems: 'center'
             }}>
               <div>
                 <strong>{job.company}</strong> - {job.position} <br />
                 <span style={{ color: '#666', fontSize: '0.9em' }}>Estado: {job.status}</span>
               </div>
-              
               <button 
                 onClick={() => handleDelete(job.id)}
-                style={{ 
-                  backgroundColor: '#dc3545', 
-                  color: 'white', 
-                  border: 'none', 
-                  padding: '8px 12px', 
-                  borderRadius: '4px', 
-                  cursor: 'pointer' 
-                }}
+                style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}
               >
                 Delete
               </button>
-
             </li>
           ))}
         </ul>
