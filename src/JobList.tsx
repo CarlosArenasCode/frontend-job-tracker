@@ -59,7 +59,7 @@ export function JobList() {
           {jobs.map((job) => (
             <li key={job.id} style={{ border: '1px solid #ccc', margin: '10px 0', padding: '15px', borderRadius: '8px' }}>
               <strong>{job.company}</strong> - {job.position} <br />
-              <span style={{ color: '#666', fontSize: '0.9em' }}>Estado: {job.status}</span>
+              <span style={{ color: '#666', fontSize: '0.9em' }}>Status: {job.status}</span>
             </li>
           ))}
         </ul>
