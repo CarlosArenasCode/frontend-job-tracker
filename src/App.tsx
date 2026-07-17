@@ -1,4 +1,3 @@
-import './index.css'
 import { JobList } from './JobList'
 
 function App() {
