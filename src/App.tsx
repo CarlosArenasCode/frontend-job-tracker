@@ -12,7 +12,7 @@ function App() {
         <p>Track your remote job applications.</p>
       </header>
       <JobForm onJobCreated={() => setRefreshKey(k => k + 1)} />
-      <JobList key={refreshKey} />
+      <JobList key={refreshKey} onJobDeleted={() => setRefreshKey(k => k + 1)} />
     </div>
   )
 }

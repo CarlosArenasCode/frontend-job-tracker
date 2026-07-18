@@ -280,6 +280,31 @@ h2 {
   cursor: not-allowed;
 }
 
+.job-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-danger {
+  padding: 5px 12px;
+  background: transparent;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
 
 /* ── Misc ── */
 code,
