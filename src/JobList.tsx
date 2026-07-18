@@ -22,9 +22,12 @@ export function JobList() {
     useEffect(() => {
         const fetchJobs = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/api/jobs`);
+                const apiUrl = import.meta.env.VITE_API_URL;
+                if (!apiUrl) throw new Error('VITE_API_URL is not configured.');
+
+                const response = await fetch(`${apiUrl}/api/jobs`);
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error(`Failed to load jobs (HTTP ${response.status} ${response.statusText})`);
                 }
                 const data = await response.json();
                 setJobs(data);

@@ -297,20 +297,3 @@ code {
   background: var(--code-bg);
 }
 
-.job-list {
-  list-style: none;
-  padding: 0;
-}
-
-.job-card {
-  border: 1px solid var(--border);
-  margin: 10px 0;
-  padding: 15px;
-  border-radius: 8px;
-  text-align: left;
-}
-
-.job-status {
-  color: var(--text);
-  font-size: 0.9em;
-}

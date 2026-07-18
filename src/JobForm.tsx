@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 
 type ApplicationStatus = 'Applied' | 'Interview' | 'Offer' | 'Rejected';
 
@@ -28,18 +28,20 @@ export function JobForm({ onJobCreated }: JobFormProps) {
     const [error, setError] = useState<string | null>(null);
 
     const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+        e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
     ) => {
         setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/jobs`, {
+            const apiUrl = import.meta.env.VITE_API_URL;
+            if (!apiUrl) throw new Error('VITE_API_URL is not configured.');
+            const response = await fetch(`${apiUrl}/api/jobs`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
