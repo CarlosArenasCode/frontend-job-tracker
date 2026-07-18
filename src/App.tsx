@@ -13,10 +13,12 @@ function App() {
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
       <h1 style={{ textAlign: 'center' }}>Job Application Tracker</h1>
       <hr style={{ marginBottom: '20px' }} />
+      
       <JobForm onJobAdded={handleJobAdded} />
-      <JobList refreshTrigger={refreshTrigger} />
+      <JobList refreshTrigger={refreshTrigger} /> 
+      
     </div>
   )
 }
 
-export default App
+export default App;

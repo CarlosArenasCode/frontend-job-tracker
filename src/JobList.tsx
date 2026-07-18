@@ -16,8 +16,10 @@ export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
     const controller = new AbortController();
     
     const fetchJobs = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
         const response = await fetch(`${apiBaseUrl}/api/jobs`, { signal: controller.signal });
         
         if (!response.ok) {
@@ -47,13 +49,13 @@ export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
     if (!window.confirm('Are you sure you want to delete this job application?')) return;
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       const response = await fetch(`${apiBaseUrl}/api/jobs/${id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Error deleting the job application');
+        throw new Error('Failed to deleting the job application');
       }
 
       setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
@@ -64,7 +66,7 @@ export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       
       const response = await fetch(`${apiBaseUrl}/api/jobs/${id}`, {
         method: 'PATCH',
@@ -94,7 +96,7 @@ export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
 
   return (
     <div>
-      <h2>My Job Applications</h2>
+      <h2>Mis Postulaciones</h2>
       {jobs.length === 0 ? (
         <p>You haven't saved any job applications yet.</p>
       ) : (
@@ -113,9 +115,10 @@ export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
                 <strong style={{ fontSize: '1.2em' }}>{job.company}</strong> - {job.position} <br />
                 
                 <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: '#666', fontSize: '0.9em' }}>Status:</span>
+                  <span style={{ color: '#666', fontSize: '0.9em' }}>Estado:</span>
                   
                   <select 
+                    aria-label="Status"
                     value={job.status} 
                     onChange={(e) => handleStatusChange(job.id, e.target.value)}
                     style={{ 
@@ -127,10 +130,10 @@ export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
                                        job.status === 'Offer' ? '#d1e7dd' : '#f8d7da'
                     }}
                   >
-                    <option value="Applied">Applied (Sent)</option>
-                    <option value="Interview">Interview (Interview)</option>
-                    <option value="Offer">Offer (Offer)</option>
-                    <option value="Rejected">Rejected (Rejected)</option>
+                    <option value="Applied">Applied (Enviado)</option>
+                    <option value="Interview">Interview (Entrevista)</option>
+                    <option value="Offer">Offer (Oferta)</option>
+                    <option value="Rejected">Rejected (Rechazado)</option>
                   </select>
                 </div>
 
