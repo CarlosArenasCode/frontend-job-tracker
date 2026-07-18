@@ -15,11 +15,10 @@ function App() {
       <hr style={{ marginBottom: '20px' }} />
       
       <JobForm onJobAdded={handleJobAdded} />
-      
-      <JobList key={refreshTrigger} /> 
+      <JobList refreshTrigger={refreshTrigger} /> 
       
     </div>
   )
 }
 
-export default App
+export default App;

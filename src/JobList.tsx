@@ -16,8 +16,10 @@ export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
     const controller = new AbortController();
     
     const fetchJobs = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
         const response = await fetch(`${apiBaseUrl}/api/jobs`, { signal: controller.signal });
         
         if (!response.ok) {
@@ -41,25 +43,51 @@ export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
 
     fetchJobs();
     return () => controller.abort();
-  }, [refreshTrigger]);
+  }, [refreshTrigger]); 
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this job application?')) return;
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       const response = await fetch(`${apiBaseUrl}/api/jobs/${id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Error deleting the job application');
+        throw new Error('Failed to deleting the job application');
       }
 
       setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
     } catch (err: any) {
-      // Mejora 4: Fallback seguro para el error del alert
       alert(`Error: ${err?.message ?? String(err)}`); 
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      
+      const response = await fetch(`${apiBaseUrl}/api/jobs/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update job status');
+      }
+
+      setJobs((prevJobs) => 
+        prevJobs.map((job) => 
+          job.id === id ? { ...job, status: newStatus } : job
+        )
+      );
+
+    } catch (err: any) {
+      alert(`Error updating status: ${err?.message ?? String(err)}`);
     }
   };
 
@@ -84,8 +112,31 @@ export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
               alignItems: 'center'
             }}>
               <div>
-                <strong>{job.company}</strong> - {job.position} <br />
-                <span style={{ color: '#666', fontSize: '0.9em' }}>Estado: {job.status}</span>
+                <strong style={{ fontSize: '1.2em' }}>{job.company}</strong> - {job.position} <br />
+                
+                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ color: '#666', fontSize: '0.9em' }}>Estado:</span>
+                  
+                  <select 
+                    aria-label="Status"
+                    value={job.status} 
+                    onChange={(e) => handleStatusChange(job.id, e.target.value)}
+                    style={{ 
+                      padding: '4px 8px', 
+                      borderRadius: '4px',
+                      border: '1px solid #aaa',
+                      backgroundColor: job.status === 'Applied' ? '#e2e3e5' : 
+                                       job.status === 'Interview' ? '#fff3cd' : 
+                                       job.status === 'Offer' ? '#d1e7dd' : '#f8d7da'
+                    }}
+                  >
+                    <option value="Applied">Applied (Enviado)</option>
+                    <option value="Interview">Interview (Entrevista)</option>
+                    <option value="Offer">Offer (Oferta)</option>
+                    <option value="Rejected">Rejected (Rechazado)</option>
+                  </select>
+                </div>
+
               </div>
               <button 
                 onClick={() => handleDelete(job.id)}
