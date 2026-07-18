@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 
 export function JobForm({ onJobAdded }: { onJobAdded: () => void }) {
   const [company, setCompany] = useState('');
@@ -6,7 +6,7 @@ export function JobForm({ onJobAdded }: { onJobAdded: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault(); 
     setLoading(true);
     setError(null);
