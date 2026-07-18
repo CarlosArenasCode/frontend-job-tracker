@@ -1,74 +1,139 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 
-export function JobForm({ onJobAdded }: { onJobAdded: () => void }) {
-  const [company, setCompany] = useState('');
-  const [position, setPosition] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+type ApplicationStatus = 'Applied' | 'Interview' | 'Offer' | 'Rejected';
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); 
-    setLoading(true);
-    setError(null);
+interface JobFormData {
+    company: string;
+    position: string;
+    status: ApplicationStatus;
+    url: string;
+    notes: string;
+}
 
-    try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-      
-      const response = await fetch(`${apiBaseUrl}/api/jobs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ company, position }),
-      });
+interface JobFormProps {
+    onJobCreated: () => void;
+}
 
-      if (!response.ok) {
-        throw new Error('Error saving the job application');
-      }
+const defaultForm: JobFormData = {
+    company: '',
+    position: '',
+    status: 'Applied',
+    url: '',
+    notes: '',
+};
 
-      setCompany('');
-      setPosition('');
-      onJobAdded();
+export function JobForm({ onJobCreated }: JobFormProps) {
+    const [form, setForm] = useState<JobFormData>(defaultForm);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    } catch (err: any) {
-      setError(err?.message ?? String(err));
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleChange = (
+        e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    ) => {
+        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
 
-  return (
-    <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-      <h3 style={{ marginTop: 0 }}>Add Job</h3>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <input 
-          type="text" 
-          aria-label="Company"
-          placeholder="Company (e.g. Google)" 
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
-          required
-          style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', flex: 1 }}
-        />
-        <input 
-          type="text" 
-          aria-label="Position"
-          placeholder="Position (e.g. Backend Dev)" 
-          value={position}
-          onChange={(e) => setPosition(e.target.value)}
-          required
-          style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', flex: 1 }}
-        />
-        <button 
-          type="submit" 
-          disabled={loading} 
-          style={{ padding: '10px 20px', cursor: 'pointer', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
-        >
-          {loading ? 'Guardando...' : 'Guardar'}
-        </button>
-      </form>
-    </div>
-  );
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError(null);
+
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL;
+            if (!apiUrl) throw new Error('VITE_API_URL is not configured.');
+            const response = await fetch(`${apiUrl}/api/jobs`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    company: form.company,
+                    position: form.position,
+                    status: form.status,
+                    url: form.url || null,
+                    notes: form.notes || null,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to create job application.');
+            }
+
+            setForm(defaultForm);
+            onJobCreated();
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            setError(message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <form className="job-form" onSubmit={handleSubmit}>
+            <div className="job-form-row">
+                <div className="job-form-field">
+                    <label htmlFor="company">Company</label>
+                    <input
+                        id="company"
+                        name="company"
+                        type="text"
+                        placeholder="e.g. Stripe"
+                        value={form.company}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+                <div className="job-form-field">
+                    <label htmlFor="position">Position</label>
+                    <input
+                        id="position"
+                        name="position"
+                        type="text"
+                        placeholder="e.g. Backend Engineer"
+                        value={form.position}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+                <div className="job-form-field job-form-field--short">
+                    <label htmlFor="status">Status</label>
+                    <select id="status" name="status" value={form.status} onChange={handleChange}>
+                        <option value="Applied">Applied</option>
+                        <option value="Interview">Interview</option>
+                        <option value="Offer">Offer</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+            <div className="job-form-row">
+                <div className="job-form-field">
+                    <label htmlFor="url">URL <span className="job-form-optional">(optional)</span></label>
+                    <input
+                        id="url"
+                        name="url"
+                        type="url"
+                        placeholder="https://jobs.company.com/..."
+                        value={form.url}
+                        onChange={handleChange}
+                    />
+                </div>
+                <div className="job-form-field">
+                    <label htmlFor="notes">Notes <span className="job-form-optional">(optional)</span></label>
+                    <input
+                        id="notes"
+                        name="notes"
+                        type="text"
+                        placeholder="Recruiter contact, referral..."
+                        value={form.notes}
+                        onChange={handleChange}
+                    />
+                </div>
+            </div>
+            {error && <p className="state-message state-message--error">{error}</p>}
+            <div className="job-form-actions">
+                <button type="submit" className="btn-primary" disabled={loading}>
+                    {loading ? 'Adding...' : 'Add Application'}
+                </button>
+            </div>
+        </form>
+    );
 }

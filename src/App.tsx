@@ -1,24 +1,20 @@
-import { useState } from 'react';
-import { JobList } from './JobList';
-import { JobForm } from './JobForm';
+import { useState } from 'react'
+import { JobList } from './JobList'
+import { JobForm } from './JobForm'
 
 function App() {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  const handleJobAdded = () => {
-    setRefreshTrigger(prev => prev + 1);
-  };
+  const [refreshKey, setRefreshKey] = useState(0);
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
-      <h1 style={{ textAlign: 'center' }}>Job Application Tracker</h1>
-      <hr style={{ marginBottom: '20px' }} />
-      
-      <JobForm onJobAdded={handleJobAdded} />
-      <JobList refreshTrigger={refreshTrigger} /> 
-      
+    <div>
+      <header className="app-header">
+        <h1>Job Tracker</h1>
+        <p>Track your remote job applications.</p>
+      </header>
+      <JobForm onJobCreated={() => setRefreshKey(k => k + 1)} />
+      <JobList key={refreshKey} onJobDeleted={() => setRefreshKey(k => k + 1)} />
     </div>
   )
 }
 
-export default App;
+export default App

@@ -1,153 +1,143 @@
 import { useState, useEffect } from 'react';
 
+type ApplicationStatus = 'Applied' | 'Interview' | 'Offer' | 'Rejected';
+
 interface Job {
-  id: string;
-  company: string;
-  position: string;
-  status: string;
+    id: string;
+    company: string;
+    position: string;
+    status: ApplicationStatus;
 }
 
-export function JobList({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface JobListProps {
+    onJobDeleted: () => void;
+}
 
-  useEffect(() => {
-    const controller = new AbortController();
-    
-    const fetchJobs = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-        const response = await fetch(`${apiBaseUrl}/api/jobs`, { signal: controller.signal });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch jobs (${response.status})`);
+const statusClass: Record<ApplicationStatus, string> = {
+    Applied: 'job-status--applied',
+    Interview: 'job-status--interview',
+    Offer: 'job-status--offer',
+    Rejected: 'job-status--rejected',
+};
+
+export function JobList({ onJobDeleted }: JobListProps) {
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        const fetchJobs = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const apiUrl = import.meta.env.VITE_API_URL;
+                if (!apiUrl) throw new Error('VITE_API_URL is not configured.');
+
+                const response = await fetch(`${apiUrl}/api/jobs`, { signal: controller.signal });
+                if (!response.ok) {
+                    throw new Error(`Failed to load jobs (HTTP ${response.status} ${response.statusText})`);
+                }
+                const data = await response.json();
+                if (!controller.signal.aborted) {
+                    setJobs(data);
+                }
+            } catch (err: unknown) {
+                if (err instanceof Error && err.name === 'AbortError') return;
+                const message = err instanceof Error ? err.message : String(err);
+                setError(message);
+            } finally {
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchJobs();
+        return () => controller.abort();
+    }, []);
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this application?')) return;
+
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL;
+            if (!apiUrl) throw new Error('VITE_API_URL is not configured.');
+
+            const response = await fetch(`${apiUrl}/api/jobs/${id}`, { method: 'DELETE' });
+            if (!response.ok) {
+                throw new Error(`Failed to delete application (HTTP ${response.status})`);
+            }
+
+            setJobs(prev => prev.filter(job => job.id !== id));
+            onJobDeleted();
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            alert(message);
         }
-        
-        const data = await response.json();
-        
-        if (!controller.signal.aborted) {
-          setJobs(data);
-        }
-      } catch (err: any) {
-        if (err.name === 'AbortError') return;
-        setError(err?.message ?? String(err));
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
     };
 
-    fetchJobs();
-    return () => controller.abort();
-  }, [refreshTrigger]); 
+    const handleStatusChange = async (id: string, newStatus: ApplicationStatus) => {
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL;
+            if (!apiUrl) throw new Error('VITE_API_URL is not configured.');
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this job application?')) return;
+            const response = await fetch(`${apiUrl}/api/jobs/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }),
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to update status (HTTP ${response.status})`);
+            }
 
-    try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiBaseUrl}/api/jobs/${id}`, {
-        method: 'DELETE',
-      });
+            setJobs(prev => prev.map(job => job.id === id ? { ...job, status: newStatus } : job));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            alert(message);
+        }
+    };
 
-      if (!response.ok) {
-        throw new Error('Failed to deleting the job application');
-      }
+    if (loading) return <p className="state-message">Loading...</p>;
+    if (error) return <p className="state-message state-message--error">Error: {error}</p>;
 
-      setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
-    } catch (err: any) {
-      alert(`Error: ${err?.message ?? String(err)}`); 
-    }
-  };
-
-  const handleStatusChange = async (id: string, newStatus: string) => {
-    try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-      
-      const response = await fetch(`${apiBaseUrl}/api/jobs/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update job status');
-      }
-
-      setJobs((prevJobs) => 
-        prevJobs.map((job) => 
-          job.id === id ? { ...job, status: newStatus } : job
-        )
-      );
-
-    } catch (err: any) {
-      alert(`Error updating status: ${err?.message ?? String(err)}`);
-    }
-  };
-
-  if (loading) return <p>Loading jobs...</p>;
-  if (error) return <p>Error: {error}</p>;
-
-  return (
-    <div>
-      <h2>Mis Postulaciones</h2>
-      {jobs.length === 0 ? (
-        <p>You haven't saved any job applications yet.</p>
-      ) : (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {jobs.map((job) => (
-            <li key={job.id} style={{ 
-              border: '1px solid #ccc', 
-              margin: '10px 0', 
-              padding: '15px', 
-              borderRadius: '8px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <div>
-                <strong style={{ fontSize: '1.2em' }}>{job.company}</strong> - {job.position} <br />
-                
-                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: '#666', fontSize: '0.9em' }}>Estado:</span>
-                  
-                  <select 
-                    aria-label="Status"
-                    value={job.status} 
-                    onChange={(e) => handleStatusChange(job.id, e.target.value)}
-                    style={{ 
-                      padding: '4px 8px', 
-                      borderRadius: '4px',
-                      border: '1px solid #aaa',
-                      backgroundColor: job.status === 'Applied' ? '#e2e3e5' : 
-                                       job.status === 'Interview' ? '#fff3cd' : 
-                                       job.status === 'Offer' ? '#d1e7dd' : '#f8d7da'
-                    }}
-                  >
-                    <option value="Applied">Applied (Enviado)</option>
-                    <option value="Interview">Interview (Entrevista)</option>
-                    <option value="Offer">Offer (Oferta)</option>
-                    <option value="Rejected">Rejected (Rechazado)</option>
-                  </select>
-                </div>
-
-              </div>
-              <button 
-                onClick={() => handleDelete(job.id)}
-                style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+    return (
+        <div>
+            <h2>My Applications</h2>
+            {jobs.length === 0 ? (
+                <p className="state-message">No applications found.</p>
+            ) : (
+                <ul className="job-list">
+                    {jobs.map(job => (
+                        <li key={job.id} className="job-card">
+                            <div className="job-card-info">
+                                <span className="job-card-title">{job.position}</span>
+                                <span className="job-card-company">{job.company}</span>
+                            </div>
+                            <div className="job-card-actions">
+                                <select
+                                    aria-label="Status"
+                                    className={`job-status ${statusClass[job.status]}`}
+                                    value={job.status}
+                                    onChange={e => handleStatusChange(job.id, e.target.value as ApplicationStatus)}
+                                >
+                                    <option value="Applied">Applied</option>
+                                    <option value="Interview">Interview</option>
+                                    <option value="Offer">Offer</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                                <button
+                                    className="btn-danger"
+                                    onClick={() => handleDelete(job.id)}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
 }
